@@ -1,0 +1,49 @@
+// ==================== DRAMA WATCH ====================
+const Watch = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<"episodes" | "highlights">("episodes");
+  const [episodes, setEpisodes] = useState<EpisodeItem[]>([]);
+  const [currentEpisode, setCurrentEpisode] = useState<EpisodeItem | null>(null);
+  const [recommended, setRecommended] = useState<Drama[]>([]);
+  const [drama, setDrama] = useState<Drama | null>(null);
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [showComments, setShowComments] = useState(false);
+  const [watchLaterItems, setWatchLaterItems] = useState<WatchLaterItem[]>([]);
+  const [showSubscribe, setShowSubscribe] = useState(false);
+  const [subscribeMode, setSubscribeMode] = useState<"user" | "agent">("user");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userDoc, setUserDoc] = useState<UserItem | null>(null);
+  const [isCaching, setIsCaching] = useState(false);
+  const [cacheProgress, setCacheProgress] = useState(0);
+  const [playingOffline, setPlayingOffline] = useState(false);
+  const [cachedVideoUrl, setCachedVideoUrl] = useState<string | null>(null);
+  const [networkStatus, setNetworkStatus] = useState(networkDetection.getNetworkStatus());
+  const isSport = id?.startsWith("sport-");
+  const { downloadVideo } = useVideoCache();
+  const offlineState = location.state as { isOffline?: boolean; cacheId?: string } | null;
+
+  const firebaseState = location.state as {
+    firebaseId?: string;
+    title?: string;
+    image?: string;
+    streamLink?: string;
+    downloadLink?: string;
+    episodes?: string;
+    genre?: string;
+    rating?: number;
+    description?: string;
+    actors?: string;
+    isVip?: boolean;
+    isHotDrama?: boolean;
+    isOriginal?: boolean;
+    isAgent?: boolean;
+    agentMarkedAt?: string | null;
+    targetEpisodeNumber?: number;
+    targetEpisodeId?: string;
+  } | null;

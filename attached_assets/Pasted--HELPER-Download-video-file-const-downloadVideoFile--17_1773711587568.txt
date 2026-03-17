@@ -1,0 +1,90 @@
+// ==================== HELPER: Download video file ====================
+const downloadVideoFile = async (
+  url: string,
+  fileName: string,
+  onStart: () => void,
+  onEnd: () => void,
+  onError: (msg: string) => void,
+  onSuccess: (name: string) => void
+) => {
+  onStart();
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Network response was not ok');
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+    onSuccess(fileName);
+  } catch (err) {
+    // Fallback to direct download if fetch fails (e.g. CORS)
+    try {
+      const backendUrl = `https://download.mainplatform-nexus.workers.dev/?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(fileName)}`;
+      const link = document.createElement("a");
+      link.href = backendUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      onSuccess(fileName);
+    } catch (e) {
+      onError("Download failed. Please try again or use a different browser.");
+    }
+  }
+  onEnd();
+};
+
+// ==================== DRAMA WATCH ====================
+const Watch = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<"episodes" | "highlights">("episodes");
+  const [episodes, setEpisodes] = useState<EpisodeItem[]>([]);
+  const [currentEpisode, setCurrentEpisode] = useState<EpisodeItem | null>(null);
+  const [recommended, setRecommended] = useState<Drama[]>([]);
+  const [drama, setDrama] = useState<Drama | null>(null);
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [showComments, setShowComments] = useState(false);
+  const [watchLaterItems, setWatchLaterItems] = useState<WatchLaterItem[]>([]);
+  const [showSubscribe, setShowSubscribe] = useState(false);
+  const [subscribeMode, setSubscribeMode] = useState<"user" | "agent">("user");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userDoc, setUserDoc] = useState<UserItem | null>(null);
+  const [isCaching, setIsCaching] = useState(false);
+  const [cacheProgress, setCacheProgress] = useState(0);
+  const [playingOffline, setPlayingOffline] = useState(false);
+  const [cachedVideoUrl, setCachedVideoUrl] = useState<string | null>(null);
+  const [networkStatus, setNetworkStatus] = useState(networkDetection.getNetworkStatus());
+  const isSport = id?.startsWith("sport-");
+  const { downloadVideo } = useVideoCache();
+  const offlineState = location.state as { isOffline?: boolean; cacheId?: string } | null;
+
+  const firebaseState = location.state as {
+    firebaseId?: string;
+    title?: string;
+    image?: string;
+    streamLink?: string;
+    downloadLink?: string;
+    episodes?: string;
+    genre?: string;
+    rating?: number;
+    description?: string;
+    actors?: string;
+    isVip?: boolean;
+    isHotDrama?: boolean;
+    isOriginal?: boolean;
+    isAgent?: boolean;
+    agentMarkedAt?: string | null;
+    targetEpisodeNumber?: number;
+    targetEpisodeId?: string;
+  } | null;

@@ -1,0 +1,44 @@
+2AdminEpisodes.tsx:109 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
+    at AdminEpisodes.tsx:109:67
+    at Array.map (<anonymous>)
+    at AdminEpisodes (AdminEpisodes.tsx:102:25)
+    at renderWithHooks (react-dom-l1ChtmKl.js?v=aa9fcddb:9623:19)
+    at updateFunctionComponent (react-dom-l1ChtmKl.js?v=aa9fcddb:12125:19)
+    at beginWork (react-dom-l1ChtmKl.js?v=aa9fcddb:13099:13)
+    at HTMLUnknownElement.callCallback (react-dom-l1ChtmKl.js?v=aa9fcddb:3143:11)
+    at Object.invokeGuardedCallbackDev (react-dom-l1ChtmKl.js?v=aa9fcddb:3163:14)
+    at invokeGuardedCallback (react-dom-l1ChtmKl.js?v=aa9fcddb:3202:32)
+    at beginWork$1 (react-dom-l1ChtmKl.js?v=aa9fcddb:15993:5)Understand this error
+client:510 The above error occurred in the <AdminEpisodes> component:
+
+    at AdminEpisodes (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/src/pages/admin/AdminEpisodes.tsx?t=1773755811697:13:32)
+    at RenderedRoute (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=aa9fcddb:3331:8)
+    at Outlet (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=aa9fcddb:3702:25)
+    at div
+    at main
+    at div
+    at AdminLayout (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/src/components/admin/AdminLayout.tsx:9:37)
+    at RenderedRoute (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=aa9fcddb:3331:8)
+    at Routes (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=aa9fcddb:3774:8)
+    at Router (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=aa9fcddb:3722:18)
+    at BrowserRouter (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=aa9fcddb:4401:8)
+    at AuthProvider (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/src/contexts/AuthContext.tsx:11:32)
+    at Provider (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/node_modules/.vite/deps/dist-ShbLto9g.js?v=aa9fcddb:67:12)
+    at TooltipProvider (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=aa9fcddb:1980:10)
+    at QueryClientProvider (https://46ee48d8-c06c-40fd-874f-29c6746ddfc3-00-1ha1meqnf75yh.riker.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=aa9fcddb:2496:30)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+console.<computed> @ client:510Understand this error
+react-dom-l1ChtmKl.js?v=aa9fcddb:15742 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
+    at AdminEpisodes.tsx:109:67
+    at Array.map (<anonymous>)
+    at AdminEpisodes (AdminEpisodes.tsx:102:25)
+    at renderWithHooks (react-dom-l1ChtmKl.js?v=aa9fcddb:9623:19)
+    at updateFunctionComponent (react-dom-l1ChtmKl.js?v=aa9fcddb:12125:19)
+    at beginWork (react-dom-l1ChtmKl.js?v=aa9fcddb:13099:13)
+    at beginWork$1 (react-dom-l1ChtmKl.js?v=aa9fcddb:15985:12)
+    at performUnitOfWork (react-dom-l1ChtmKl.js?v=aa9fcddb:15571:12)
+    at workLoopSync (react-dom-l1ChtmKl.js?v=aa9fcddb:15520:36)
+    at renderRootSync (react-dom-l1ChtmKl.js?v=aa9fcddb:15503:6)Understand this error

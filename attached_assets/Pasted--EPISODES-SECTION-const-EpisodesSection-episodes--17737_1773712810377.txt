@@ -1,0 +1,91 @@
+// ==================== EPISODES SECTION ====================
+const EpisodesSection = ({ episodes, series, search }: { episodes: EpisodeItem[]; series: SeriesItem[]; search: string }) => {
+  const filtered = episodes.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()) || e.seriesName.toLowerCase().includes(search.toLowerCase()));
+  const [form, setForm] = useState<Partial<EpisodeItem>>({});
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<EpisodeItem | null>(null);
+  const { toast } = useToast();
+
+  const openNew = () => { setForm({}); setEditing(null); setShowForm(true); };
+  const openEdit = (e: EpisodeItem) => { setForm({ ...e }); setEditing(e); setShowForm(true); };
+
+  const handleSave = async () => {
+    try {
+      const selectedSeries = series.find((s) => s.id === form.seriesId);
+      const data = { ...form, seriesName: selectedSeries?.name || form.seriesName || "" };
+      if (editing) {
+        await updateEpisode(editing.id, data);
+        toast({ title: "Episode updated" });
+      } else {
+        await addEpisode(data as any);
+        toast({ title: "Episode added" });
+      }
+      setShowForm(false);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try { await deleteEpisode(id); toast({ title: "Episode deleted" }); } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
+  };
+
+  if (showForm) return (
+    <ContentForm title={editing ? "Edit Episode" : "Add New Episode"} onClose={() => setShowForm(false)} onSave={handleSave}>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Select Series</label>
+        <select className="w-full h-9 rounded-lg border border-border bg-secondary text-foreground text-xs px-3" value={form.seriesId || ""} onChange={e => setForm({ ...form, seriesId: e.target.value })}>
+          <option value="">-- Select Series --</option>
+          {series.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      </div>
+      <FormField label="Episode Name" value={form.name || ""} onChange={v => setForm({ ...form, name: v })} />
+      <FormField label="Season Number" value={String(form.seasonNumber || "")} onChange={v => setForm({ ...form, seasonNumber: parseInt(v) || 1 })} />
+      <FormField label="Episode Number" value={String(form.episodeNumber || "")} onChange={v => setForm({ ...form, episodeNumber: parseInt(v) || 1 })} />
+      <FormField label="Stream Link (Video URL)" value={form.streamLink || ""} onChange={v => setForm({ ...form, streamLink: v })} />
+      <FormField label="Download Link (optional)" value={form.downloadLink || ""} onChange={v => setForm({ ...form, downloadLink: v })} />
+      <CheckboxField label="Agent Exclusive (5 days)" checked={!!form.isAgent} onChange={v => setForm({ ...form, isAgent: v, agentMarkedAt: v ? new Date().toISOString() : null })} />
+    </ContentForm>
+  );
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-xs text-muted-foreground">{filtered.length} episodes</p>
+        <Button size="sm" className="h-8 text-xs gap-1.5" onClick={openNew}><Plus className="w-3.5 h-3.5" /> Add Episode</Button>
+      </div>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <table className="w-full text-xs">
+          <thead><tr className="border-b border-border bg-secondary/50">
+            <th className="text-left p-3 text-muted-foreground font-medium">Series</th>
+            <th className="text-left p-3 text-muted-foreground font-medium">Episode Name</th>
+            <th className="text-center p-3 text-muted-foreground font-medium">Season</th>
+            <th className="text-center p-3 text-muted-foreground font-medium">Episode</th>
+            <th className="text-center p-3 text-muted-foreground font-medium hidden sm:table-cell">Stream</th>
+            <th className="text-right p-3 text-muted-foreground font-medium">Actions</th>
+          </tr></thead>
+          <tbody>
+            {filtered.map((e) => (
+              <tr key={e.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                <td className="p-3 text-primary font-medium">{e.seriesName}</td>
+                <td className="p-3 text-foreground">{e.name}</td>
+                <td className="p-3 text-center">S{e.seasonNumber}</td>
+                <td className="p-3 text-center">E{e.episodeNumber}</td>
+                <td className="p-3 text-center hidden sm:table-cell">
+                  {e.streamLink ? <CheckCircle className="w-3.5 h-3.5 text-primary mx-auto" /> : <X className="w-3.5 h-3.5 text-muted-foreground mx-auto" />}
+                </td>
+                <td className="p-3 text-right">
+                  <div className="flex gap-1 justify-end">
+                    <button onClick={() => openEdit(e)} className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-primary"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => handleDelete(e.id)} className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground text-xs">No episodes yet. Add a series first, then add episodes.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
