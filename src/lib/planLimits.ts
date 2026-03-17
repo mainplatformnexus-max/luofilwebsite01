@@ -2,23 +2,25 @@ export interface PlanLimits {
   downloadLimit: number;
   maxQuality: "720p" | "1080p" | "2K" | "4K";
   deviceLimit: number;
+  liveTv: boolean;
+  sports: boolean;
 }
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
-  "1 Day Standard":  { downloadLimit: 5,   maxQuality: "720p",  deviceLimit: 1  },
-  "1 Day Pro":       { downloadLimit: -1,  maxQuality: "1080p", deviceLimit: 2  },
-  "3 Day Classic":   { downloadLimit: 10,  maxQuality: "720p",  deviceLimit: 1  },
-  "3 Day Premium":   { downloadLimit: -1,  maxQuality: "1080p", deviceLimit: 2  },
-  "1 Week Standard": { downloadLimit: 10,  maxQuality: "720p",  deviceLimit: 1  },
-  "1 Week Premium":  { downloadLimit: -1,  maxQuality: "2K",    deviceLimit: 2  },
-  "1 Month Premium": { downloadLimit: -1,  maxQuality: "1080p", deviceLimit: 4  },
-  "1 Month Ultra":   { downloadLimit: -1,  maxQuality: "4K",    deviceLimit: 4  },
-  "VIP Monthly":     { downloadLimit: -1,  maxQuality: "4K",    deviceLimit: -1 },
+  "1 Day Standard":  { downloadLimit: 5,   maxQuality: "720p",  deviceLimit: 1,  liveTv: false, sports: false },
+  "1 Day Pro":       { downloadLimit: -1,  maxQuality: "1080p", deviceLimit: 2,  liveTv: true,  sports: false },
+  "3 Day Classic":   { downloadLimit: 10,  maxQuality: "720p",  deviceLimit: 1,  liveTv: false, sports: false },
+  "3 Day Premium":   { downloadLimit: -1,  maxQuality: "1080p", deviceLimit: 2,  liveTv: true,  sports: true  },
+  "1 Week Standard": { downloadLimit: 10,  maxQuality: "720p",  deviceLimit: 1,  liveTv: true,  sports: true  },
+  "1 Week Premium":  { downloadLimit: -1,  maxQuality: "2K",    deviceLimit: 2,  liveTv: true,  sports: true  },
+  "1 Month Premium": { downloadLimit: -1,  maxQuality: "1080p", deviceLimit: 4,  liveTv: true,  sports: true  },
+  "1 Month Ultra":   { downloadLimit: -1,  maxQuality: "4K",    deviceLimit: 4,  liveTv: true,  sports: true  },
+  "VIP Monthly":     { downloadLimit: -1,  maxQuality: "4K",    deviceLimit: -1, liveTv: true,  sports: true  },
 };
 
 export function getPlanLimits(planName: string): PlanLimits {
-  if (!planName) return { downloadLimit: 0, maxQuality: "720p", deviceLimit: 0 };
-  return PLAN_LIMITS[planName] || { downloadLimit: 0, maxQuality: "720p", deviceLimit: 0 };
+  if (!planName) return { downloadLimit: 0, maxQuality: "720p", deviceLimit: 0, liveTv: false, sports: false };
+  return PLAN_LIMITS[planName] || { downloadLimit: 0, maxQuality: "720p", deviceLimit: 0, liveTv: false, sports: false };
 }
 
 const QUALITY_RANK: Record<string, number> = {

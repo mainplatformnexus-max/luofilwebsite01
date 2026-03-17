@@ -1,7 +1,9 @@
 import Navbar from "@/components/Navbar";
 import MobileNav from "@/components/MobileNav";
-import { Tv, Signal, Radio, Lock } from "lucide-react";
-import { useLiveChannels } from "@/hooks/useFirestore";
+import { Tv, Signal, Radio, Lock, Crown } from "lucide-react";
+import { useLiveChannels, useSubscription } from "@/hooks/useFirestore";
+import { useAuth } from "@/contexts/AuthContext";
+import VipPlansModal from "@/components/VipPlansModal";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -9,12 +11,19 @@ const categories = ["All", "News", "Entertainment", "Sports", "Music", "Kids", "
 
 const LiveTVPage = () => {
   const { channels, loading } = useLiveChannels();
+  const { user, isAdmin } = useAuth();
+  const { subscription, hasActive } = useSubscription(user?.id);
   const navigate = useNavigate();
   const [filterCat, setFilterCat] = useState("All");
+  const [vipOpen, setVipOpen] = useState(false);
+
+  const canAccessLiveTV = isAdmin || (hasActive && (subscription?.limits?.liveTv ?? false));
+  const hasAnySubscription = hasActive;
 
   const filtered = filterCat === "All" ? channels : channels.filter((c) => c.category === filterCat);
 
   const handlePlay = (ch: any) => {
+    if (!canAccessLiveTV) { setVipOpen(true); return; }
     navigate(`/play/${ch.slug}`);
   };
 
@@ -23,8 +32,7 @@ const LiveTVPage = () => {
       <Navbar />
       <div style={{ marginTop: "48px" }} className="pt-3 md:pt-6 pb-16 px-2 md:px-4 max-w-7xl mx-auto">
 
-        {/* Header */}
-        <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-6">
+        <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
           <div className="p-1.5 md:p-2 rounded-lg bg-red-500/20">
             <Radio className="w-4 h-4 md:w-6 md:h-6 text-red-400" />
           </div>
@@ -34,7 +42,31 @@ const LiveTVPage = () => {
           </div>
         </div>
 
-        {/* Category filter — horizontal scroll on mobile */}
+        {/* Paywall banner */}
+        {!canAccessLiveTV && (
+          <div className="mb-3 md:mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 md:p-4 flex items-center gap-3">
+            <div className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+              <Crown className="w-4 h-4 md:w-6 md:h-6 text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-amber-400">
+                {!hasAnySubscription ? "Subscription Required" : "Plan Upgrade Required"}
+              </p>
+              <p className="text-xs text-white/60 mt-0.5">
+                {!hasAnySubscription
+                  ? "Subscribe to unlock Live TV channels."
+                  : `Your ${subscription?.plan} plan does not include Live TV. Upgrade to 1 Day Pro or higher.`}
+              </p>
+            </div>
+            <button
+              onClick={() => setVipOpen(true)}
+              className="px-3 py-1.5 md:px-4 md:py-2 bg-amber-500 text-black font-bold text-xs rounded-lg hover:bg-amber-400 shrink-0"
+            >
+              {!hasAnySubscription ? "Subscribe" : "Upgrade"}
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-1.5 md:gap-2 mb-3 md:mb-6 overflow-x-auto scrollbar-hidden pb-1">
           {categories.map((cat) => (
             <button
@@ -71,7 +103,7 @@ const LiveTVPage = () => {
               <div
                 key={ch.id}
                 onClick={() => handlePlay(ch)}
-                className="group cursor-pointer rounded-lg md:rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-primary/50 transition-all hover:scale-[1.02]"
+                className="group cursor-pointer rounded-lg md:rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-primary/50 transition-all hover:scale-[1.02] relative"
               >
                 <div className="aspect-video relative bg-white/10">
                   {ch.thumbnail ? (
@@ -86,9 +118,16 @@ const LiveTVPage = () => {
                       <Tv className="w-5 h-5 md:w-8 md:h-8 text-white/20" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Signal className="w-5 h-5 md:w-8 md:h-8 text-white" />
-                  </div>
+                  {!canAccessLiveTV && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <Lock className="w-4 h-4 md:w-6 md:h-6 text-amber-400" />
+                    </div>
+                  )}
+                  {canAccessLiveTV && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Signal className="w-5 h-5 md:w-8 md:h-8 text-white" />
+                    </div>
+                  )}
                   <div className="absolute top-1 left-1 md:top-2 md:left-2 flex gap-0.5 md:gap-1">
                     {ch.isLive && (
                       <span className="flex items-center gap-0.5 px-1 py-0.5 bg-red-500 text-white text-[8px] md:text-[9px] font-bold rounded">
@@ -112,6 +151,7 @@ const LiveTVPage = () => {
         )}
       </div>
       <MobileNav />
+      <VipPlansModal open={vipOpen} onOpenChange={setVipOpen} />
     </div>
   );
 };

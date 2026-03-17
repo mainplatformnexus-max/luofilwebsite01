@@ -1,7 +1,9 @@
 import Navbar from "@/components/Navbar";
 import MobileNav from "@/components/MobileNav";
-import { Trophy, Signal, Play, Lock } from "lucide-react";
-import { useSportContent } from "@/hooks/useFirestore";
+import { Trophy, Signal, Play, Lock, Crown } from "lucide-react";
+import { useSportContent, useSubscription } from "@/hooks/useFirestore";
+import { useAuth } from "@/contexts/AuthContext";
+import VipPlansModal from "@/components/VipPlansModal";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -9,12 +11,19 @@ const categories = ["All", "Football", "Basketball", "Tennis", "Cricket", "Rugby
 
 const SportPage = () => {
   const { sports, loading } = useSportContent();
+  const { user, isAdmin } = useAuth();
+  const { subscription, hasActive } = useSubscription(user?.id);
   const navigate = useNavigate();
   const [filterCat, setFilterCat] = useState("All");
+  const [vipOpen, setVipOpen] = useState(false);
+
+  const canAccessSports = isAdmin || (hasActive && (subscription?.limits?.sports ?? false));
+  const hasAnySubscription = hasActive;
 
   const filtered = filterCat === "All" ? sports : sports.filter((s) => s.category === filterCat);
 
   const handlePlay = (item: any) => {
+    if (!canAccessSports) { setVipOpen(true); return; }
     navigate(`/play/${item.slug}`);
   };
 
@@ -23,8 +32,7 @@ const SportPage = () => {
       <Navbar />
       <div style={{ marginTop: "48px" }} className="pt-3 md:pt-6 pb-16 px-2 md:px-4 max-w-7xl mx-auto">
 
-        {/* Header */}
-        <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-6">
+        <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
           <div className="p-1.5 md:p-2 rounded-lg bg-amber-500/20">
             <Trophy className="w-4 h-4 md:w-6 md:h-6 text-amber-400" />
           </div>
@@ -34,7 +42,31 @@ const SportPage = () => {
           </div>
         </div>
 
-        {/* Category filter — horizontal scroll on mobile */}
+        {/* Paywall banner */}
+        {!canAccessSports && (
+          <div className="mb-3 md:mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 md:p-4 flex items-center gap-3">
+            <div className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+              <Crown className="w-4 h-4 md:w-6 md:h-6 text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-amber-400">
+                {!hasAnySubscription ? "Subscription Required" : "Plan Upgrade Required"}
+              </p>
+              <p className="text-xs text-white/60 mt-0.5">
+                {!hasAnySubscription
+                  ? "Subscribe to unlock Sports content."
+                  : `Your ${subscription?.plan} plan does not include Sports. Upgrade to 3 Day Premium or higher.`}
+              </p>
+            </div>
+            <button
+              onClick={() => setVipOpen(true)}
+              className="px-3 py-1.5 md:px-4 md:py-2 bg-amber-500 text-black font-bold text-xs rounded-lg hover:bg-amber-400 shrink-0"
+            >
+              {!hasAnySubscription ? "Subscribe" : "Upgrade"}
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-1.5 md:gap-2 mb-3 md:mb-6 overflow-x-auto scrollbar-hidden pb-1">
           {categories.map((cat) => (
             <button
@@ -86,11 +118,18 @@ const SportPage = () => {
                       <Trophy className="w-6 h-6 md:w-10 md:h-10 text-white/20" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-primary flex items-center justify-center">
-                      <Play className="w-3.5 h-3.5 md:w-5 md:h-5 fill-primary-foreground text-primary-foreground ml-0.5" />
+                  {!canAccessSports && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <Lock className="w-4 h-4 md:w-6 md:h-6 text-amber-400" />
                     </div>
-                  </div>
+                  )}
+                  {canAccessSports && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-primary flex items-center justify-center">
+                        <Play className="w-3.5 h-3.5 md:w-5 md:h-5 fill-primary-foreground text-primary-foreground ml-0.5" />
+                      </div>
+                    </div>
+                  )}
                   <div className="absolute top-1 left-1 md:top-2 md:left-2 flex gap-0.5 md:gap-1">
                     {item.isLive && (
                       <span className="flex items-center gap-0.5 px-1 py-0.5 bg-red-500 text-white text-[8px] md:text-[9px] font-bold rounded">
@@ -128,6 +167,7 @@ const SportPage = () => {
         )}
       </div>
       <MobileNav />
+      <VipPlansModal open={vipOpen} onOpenChange={setVipOpen} />
     </div>
   );
 };
