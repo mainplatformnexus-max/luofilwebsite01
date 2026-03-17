@@ -110,11 +110,11 @@ const durationLabels: Record<Duration, string> = {
   "1month": "1 Month",
 };
 
-const planDurations: Record<string, number> = {
-  "1 Day Standard": 1, "1 Day Pro": 1,
-  "3 Day Classic": 3, "3 Day Premium": 3,
-  "1 Week Standard": 7, "1 Week Premium": 7,
-  "1 Month Premium": 30, "1 Month Ultra": 30, "VIP Monthly": 30,
+const durationDays: Record<Duration, number> = {
+  "1day": 1,
+  "3days": 3,
+  "1week": 7,
+  "1month": 30,
 };
 
 function getFullPlanName(duration: Duration, planName: string): string {
@@ -142,6 +142,30 @@ function isValidPhone(input: string): boolean {
   return /^\+256[37]\d{8}$/.test(formatted);
 }
 
+function extractStatusPayload(raw: any): any {
+  if (!raw) return {};
+  if (raw.data && typeof raw.data === "object") return raw.data;
+  return raw;
+}
+
+function isPaymentSuccess(payload: any): boolean {
+  if (!payload) return false;
+  return (
+    (payload.success === true && payload.status === "success") ||
+    payload.request_status === "success" ||
+    payload.status === "success"
+  );
+}
+
+function isPaymentFailed(payload: any): boolean {
+  if (!payload) return false;
+  return (
+    payload.request_status === "failed" ||
+    payload.status === "failed" ||
+    (payload.success === false && payload.request_status !== "pending" && payload.request_status !== undefined)
+  );
+}
+
 interface VipPlansModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -157,8 +181,14 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
   const [step, setStep] = useState<PayStep>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
+  const [pollCount, setPollCount] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const selectedDurationRef = useRef<Duration>("1day");
   const plans = plansByDuration[selectedDuration];
+
+  useEffect(() => {
+    selectedDurationRef.current = selectedDuration;
+  }, [selectedDuration]);
 
   useEffect(() => {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
@@ -179,6 +209,7 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
     setStep("idle");
     setErrorMsg("");
     setStatusMsg("");
+    setPollCount(0);
     setPayOpen(true);
   };
 
@@ -187,16 +218,40 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
     setPayOpen(false);
     setPayPlan(null);
     setStep("idle");
+    setPollCount(0);
   };
 
-  const grantSubscription = async (fullPlanName: string, price: number) => {
+  const grantSubscription = async (
+    fullPlanName: string,
+    duration: Duration,
+    price: number,
+    paymentMeta: {
+      msisdn?: string;
+      providerTxId?: string;
+      customerRef?: string;
+      internalRef?: string;
+      provider?: string;
+      completedAt?: string;
+    } = {}
+  ) => {
     if (!user) return;
-    const days = planDurations[fullPlanName] || 1;
+    const days = durationDays[duration] || 1;
     const startDate = new Date().toISOString().split("T")[0];
-    const endDate = new Date(Date.now() + days * 86400000).toISOString().split("T")[0];
+    const endDate = new Date(Date.now() + days * 86_400_000).toISOString().split("T")[0];
+
     await usersService.update(user.uid, {
-      subscription: { plan: fullPlanName, startDate, endDate, status: "active" },
+      subscription: {
+        plan: fullPlanName,
+        startDate,
+        endDate,
+        status: "active",
+        activatedAt: new Date().toISOString(),
+        provider: paymentMeta.provider || "Mobile Money",
+        providerTxId: paymentMeta.providerTxId || "",
+        internalRef: paymentMeta.internalRef || "",
+      },
     });
+
     await transactionsService.create({
       type: "income",
       amount: price,
@@ -205,13 +260,19 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
       status: "completed",
       date: startDate,
       userId: user.uid,
-      msisdn: phone,
+      msisdn: paymentMeta.msisdn || phone,
+      providerTxId: paymentMeta.providerTxId || "",
+      customerRef: paymentMeta.customerRef || "",
+      internalRef: paymentMeta.internalRef || "",
+      provider: paymentMeta.provider || "",
+      completedAt: paymentMeta.completedAt || new Date().toISOString(),
     } as any);
   };
 
   const startPayment = async () => {
     if (!payPlan || !user) return;
-    const fullPlanName = getFullPlanName(selectedDuration, payPlan.name);
+    const currentDuration = selectedDurationRef.current;
+    const fullPlanName = getFullPlanName(currentDuration, payPlan.name);
     const formattedPhone = formatPhone(phone);
 
     if (!isValidPhone(phone)) {
@@ -221,6 +282,8 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
 
     setStep("paying");
     setStatusMsg(`Sending payment request of UGX ${payPlan.price.toLocaleString()} to ${formattedPhone}...`);
+    setErrorMsg("");
+    setPollCount(0);
 
     let internalRef = "";
     try {
@@ -233,28 +296,35 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
           description: `LUO FILM - ${fullPlanName} Subscription`,
         }),
       });
+
       let depositData: any = {};
       try { depositData = await depositRes.json(); } catch { /* non-JSON */ }
+
+      const depositPayload = extractStatusPayload(depositData);
 
       if (!depositRes.ok) {
         setStep("error");
         setErrorMsg(
-          depositData?.message ||
-          depositData?.error ||
+          depositPayload?.message ||
+          depositPayload?.error ||
           `Payment server error (${depositRes.status}). Please try again.`
         );
         return;
       }
-      if (depositData?.success === false) {
+      if (depositPayload?.success === false) {
         setStep("error");
-        setErrorMsg(depositData?.message || depositData?.error || "Payment request was rejected. Try a different number.");
+        setErrorMsg(depositPayload?.message || depositPayload?.error || "Payment request was rejected. Try a different number.");
         return;
       }
+
       internalRef =
+        depositPayload?.internal_reference ||
+        depositPayload?.internalReference ||
+        depositPayload?.reference ||
         depositData?.internal_reference ||
-        depositData?.data?.internal_reference ||
         depositData?.reference || "";
-    } catch (e: any) {
+
+    } catch {
       setStep("error");
       setErrorMsg("Could not reach payment server. Check your internet and try again.");
       return;
@@ -268,34 +338,42 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
 
     setStep("polling");
     setStatusMsg(`Approve the payment prompt on ${formattedPhone}...`);
+    setPollCount(0);
 
     let attempts = 0;
-    const maxAttempts = 60;
+    const MAX_ATTEMPTS = 120;
 
     pollRef.current = setInterval(async () => {
       attempts++;
-      if (attempts > maxAttempts) {
+      setPollCount(attempts);
+
+      if (attempts > MAX_ATTEMPTS) {
         stopPolling();
         setStep("error");
-        setErrorMsg("Payment timed out after 3 minutes. If money was deducted, contact support with ref: " + internalRef);
+        setErrorMsg(`Payment confirmation timed out after 4 minutes. If money was deducted, contact support with ref: ${internalRef}`);
         return;
       }
+
       try {
-        const statusRes = await fetch(`${MOBILE_API}/request-status?internal_reference=${internalRef}`);
-        if (!statusRes.ok) return; // keep polling on server errors
-        const statusData = await statusRes.json();
+        const statusRes = await fetch(
+          `${MOBILE_API}/request-status?internal_reference=${encodeURIComponent(internalRef)}`
+        );
 
-        const isSuccess =
-          (statusData?.success === true && statusData?.status === "success") ||
-          statusData?.request_status === "success";
-        const isFailed =
-          statusData?.request_status === "failed" ||
-          statusData?.status === "failed" ||
-          (statusData?.success === false && statusData?.request_status !== "pending");
+        if (!statusRes.ok) return;
 
-        if (isSuccess) {
+        const rawData = await statusRes.json();
+        const payload = extractStatusPayload(rawData);
+
+        if (isPaymentSuccess(payload)) {
           stopPolling();
-          await grantSubscription(fullPlanName, payPlan.price);
+          await grantSubscription(fullPlanName, currentDuration, payPlan.price, {
+            msisdn: payload.msisdn || formattedPhone,
+            providerTxId: payload.provider_transaction_id || "",
+            customerRef: payload.customer_reference || "",
+            internalRef: payload.internal_reference || internalRef,
+            provider: payload.provider || "",
+            completedAt: payload.completed_at || new Date().toISOString(),
+          });
           setStep("success");
           setStatusMsg(`Your ${fullPlanName} subscription is now active! Enjoy LUO FILM.`);
           toast({ title: "Subscription activated!", description: `Welcome to ${fullPlanName}` });
@@ -303,18 +381,18 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
             handleClosePayment();
             onOpenChange(false);
           }, 3500);
-        } else if (isFailed) {
+        } else if (isPaymentFailed(payload)) {
           stopPolling();
           setStep("error");
           setErrorMsg(
-            statusData?.message ||
+            payload?.message ||
             "Payment was declined or failed. Please ensure you have enough balance and try again."
           );
         }
       } catch {
         // keep polling on network errors
       }
-    }, 3000);
+    }, 2000);
   };
 
   return (
@@ -360,7 +438,7 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
                   <p className="text-sm text-red-400">{errorMsg}</p>
                 </div>
                 <button
-                  onClick={() => { setStep("idle"); setErrorMsg(""); }}
+                  onClick={() => { setStep("idle"); setErrorMsg(""); setPollCount(0); }}
                   className="w-full py-2.5 bg-white/10 text-white font-semibold rounded-xl text-sm hover:bg-white/20"
                 >
                   Try Again
@@ -376,7 +454,12 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
                 </p>
                 <p className="text-xs text-white/50 leading-relaxed">{statusMsg}</p>
                 {step === "polling" && (
-                  <p className="text-xs text-amber-400/70">Please approve the prompt on your phone</p>
+                  <>
+                    <p className="text-xs text-amber-400/70">Please approve the prompt on your phone</p>
+                    <p className="text-[10px] text-white/25">
+                      Checking status... ({pollCount}/{120})
+                    </p>
+                  </>
                 )}
               </div>
             ) : (
