@@ -387,18 +387,27 @@ const PlayPage = () => {
                   const fileName = `${title} vj. paul ug (www.luofilm.site)${ext}`;
                   const downloadUrl = `${WORKER}?url=${encodeURIComponent(rawUrl)}&filename=${encodeURIComponent(fileName)}&download=1`;
                   return (
-                    <a
+                    <button
                       key={i}
-                      href={downloadUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       data-testid={`download-quality-btn-${i}`}
+                      onClick={() => {
+                        if (!isAdmin) {
+                          const limit = subscription?.limits?.downloadLimit ?? 0;
+                          const used = subscription?.downloadsUsed ?? 0;
+                          if (limit !== -1 && used >= limit) {
+                            setVipOpen(true);
+                            return;
+                          }
+                        }
+                        window.open(downloadUrl, "_blank", "noopener,noreferrer");
+                        incrementDownload();
+                      }}
                       className={`flex items-center gap-1.5 pl-2.5 pr-3 py-1 rounded-lg text-xs font-bold transition-colors ${style}`}
                     >
                       <Download className="w-3 h-3 shrink-0" />
                       <span>{link.quality}</span>
                       {link.fileSize && <span className="opacity-70 font-normal">({link.fileSize})</span>}
-                    </a>
+                    </button>
                   );
                 })}
               </div>
