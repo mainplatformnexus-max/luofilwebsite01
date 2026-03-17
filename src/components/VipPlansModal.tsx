@@ -372,18 +372,23 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
         return;
       }
 
+      let rawData: any;
       try {
         const statusRes = await fetch(
           `${MOBILE_API}/request-status?internal_reference=${encodeURIComponent(internalRef)}`
         );
-
         if (!statusRes.ok) return;
+        rawData = await statusRes.json();
+      } catch {
+        // keep polling on network errors
+        return;
+      }
 
-        const rawData = await statusRes.json();
-        const payload = extractStatusPayload(rawData);
+      const payload = extractStatusPayload(rawData);
 
-        if (isPaymentSuccess(payload)) {
-          stopPolling();
+      if (isPaymentSuccess(payload)) {
+        stopPolling();
+        try {
           await grantSubscription(fullPlanName, currentDuration, payPlan.price, {
             msisdn: payload.msisdn || formattedPhone,
             providerTxId: payload.provider_transaction_id || "",
@@ -399,16 +404,19 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
             handleClosePayment();
             onOpenChange(false);
           }, 3500);
-        } else if (isPaymentFailed(payload)) {
-          stopPolling();
+        } catch (err: any) {
           setStep("error");
           setErrorMsg(
-            payload?.message ||
-            "Payment was declined or failed. Please ensure you have enough balance and try again."
+            `Payment received but subscription activation failed. Contact support with ref: ${internalRef}`
           );
         }
-      } catch {
-        // keep polling on network errors
+      } else if (isPaymentFailed(payload)) {
+        stopPolling();
+        setStep("error");
+        setErrorMsg(
+          payload?.message ||
+          "Payment was declined or failed. Please ensure you have enough balance and try again."
+        );
       }
     }, 1000);
   };
