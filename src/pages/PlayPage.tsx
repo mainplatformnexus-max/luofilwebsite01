@@ -11,6 +11,23 @@ import Hls from "hls.js";
 import { FirestoreEpisode } from "@/lib/firestore";
 import { toast } from "@/hooks/use-toast";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { trackActivity } from "@/lib/activityTracker";
+
+function filterLinksByTier(
+  links: { quality: string; url: string; fileSize?: string }[],
+  tier: number
+): { quality: string; url: string; fileSize?: string }[] {
+  if (tier >= 3) return links;
+  if (tier >= 2) return links.filter((l) => {
+    const q = l.quality.toUpperCase();
+    return !q.includes("4K") && !q.includes("UHD") && !q.includes("2K");
+  });
+  if (tier >= 1) return links.filter((l) => {
+    const q = l.quality.toUpperCase();
+    return !q.includes("4K") && !q.includes("UHD") && !q.includes("2K") && !q.includes("1080");
+  });
+  return [];
+}
 
 const isM3U8 = (url: string) => url.includes(".m3u8");
 const isDirectVideo = (url: string) => /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
@@ -140,6 +157,7 @@ const PlayPage = () => {
   );
 
   const canAccess = isAdmin || hasActive;
+  const planTier = isAdmin ? 4 : (subscription?.tier ?? 0);
   const [vipOpen, setVipOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -221,6 +239,22 @@ const PlayPage = () => {
     }
   }, [currentEpisode?.id]);
 
+  // Track play
+  useEffect(() => {
+    if (!content || !canAccess) return;
+    const target = isSeries && currentEpisode
+      ? `${title} - S${epSeason(currentEpisode)}E${epNum(currentEpisode)}`
+      : title;
+    trackActivity({
+      userId: user?.id,
+      user: user?.name || user?.email || "Guest",
+      action: "Watched",
+      target,
+      page: window.location.pathname,
+      extra: subscription?.plan || "",
+    });
+  }, [currentEpisode?.id, content?.slug]);
+
   // Primary URL for the video player (embed URL takes priority for movies)
   const primaryUrl: string =
     (isSeries && currentEpisode ? epStreamLinks(currentEpisode)[0]?.url : null) ||
@@ -231,17 +265,19 @@ const PlayPage = () => {
     (sport?.streamUrl || null) ||
     "";
 
-  // Download quality links (for the quality/download bar and download modal)
-  const downloadQualityLinks: { quality: string; url: string; fileSize?: string }[] =
+  // Download quality links filtered by plan tier
+  const rawDownloadLinks: { quality: string; url: string; fileSize?: string }[] =
     isSeries && currentEpisode
       ? epStreamLinks(currentEpisode)
       : (movie?.streamLinks || []);
+  const downloadQualityLinks = canAccess ? filterLinksByTier(rawDownloadLinks, planTier) : [];
 
-  // Download links for the download modal
-  const downloadLinks: { quality: string; url: string; fileSize?: string }[] =
+  // Download links for the download modal (also filtered by tier)
+  const rawModalLinks: { quality: string; url: string; fileSize?: string }[] =
     isSeries && currentEpisode
       ? epDownloadLinks(currentEpisode)
       : (movie?.streamLinks || []);
+  const downloadLinks = filterLinksByTier(rawModalLinks, planTier);
 
   const actors = movie?.actors || show?.actors || [];
 

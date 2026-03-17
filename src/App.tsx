@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ActivityTracker from "@/components/ActivityTracker";
 import Index from "./pages/Index.tsx";
 import Detail from "./pages/Detail.tsx";
 import PlayPage from "./pages/PlayPage.tsx";
@@ -44,6 +45,7 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
+          <ActivityTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/drama" element={<DramaPage />} />

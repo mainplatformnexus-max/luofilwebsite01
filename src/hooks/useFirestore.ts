@@ -77,7 +77,13 @@ export function useActivities() {
 
   useEffect(() => {
     const unsub = activitiesService.subscribe((items) => {
-      setActivities(items.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")));
+      setActivities(
+        items.sort((a, b) => {
+          const aMs = (a as any).createdAtMs || (typeof a.createdAt === "string" && a.createdAt.includes("T") ? new Date(a.createdAt).getTime() : 0);
+          const bMs = (b as any).createdAtMs || (typeof b.createdAt === "string" && b.createdAt.includes("T") ? new Date(b.createdAt).getTime() : 0);
+          return bMs - aMs;
+        })
+      );
       setLoading(false);
     });
     return unsub;

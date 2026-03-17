@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import { usersService, transactionsService } from "@/lib/firestore";
 import { toast } from "@/hooks/use-toast";
+import { trackActivity } from "@/lib/activityTracker";
 
 type Duration = "1day" | "3days" | "1week" | "1month";
 type PayStep = "idle" | "validating" | "paying" | "polling" | "success" | "error";
@@ -144,8 +145,16 @@ function isValidPhone(input: string): boolean {
 
 function extractStatusPayload(raw: any): any {
   if (!raw) return {};
+  // API always wraps success result under "data"
   if (raw.data && typeof raw.data === "object") return raw.data;
   return raw;
+}
+
+function getDevice(): string {
+  const ua = navigator.userAgent;
+  if (/mobile/i.test(ua) && !/tablet|ipad/i.test(ua)) return "Mobile";
+  if (/tablet|ipad/i.test(ua)) return "Tablet";
+  return "Desktop";
 }
 
 function isPaymentSuccess(payload: any): boolean {
@@ -267,6 +276,15 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
       provider: paymentMeta.provider || "",
       completedAt: paymentMeta.completedAt || new Date().toISOString(),
     } as any);
+
+    await trackActivity({
+      userId: user.uid,
+      user: user.displayName || user.email || "User",
+      action: "Subscribed",
+      target: fullPlanName,
+      page: window.location.pathname,
+      extra: `UGX ${price.toLocaleString()} via ${paymentMeta.provider || "Mobile Money"}`,
+    });
   };
 
   const startPayment = async () => {
@@ -392,7 +410,7 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
       } catch {
         // keep polling on network errors
       }
-    }, 2000);
+    }, 1000);
   };
 
   return (

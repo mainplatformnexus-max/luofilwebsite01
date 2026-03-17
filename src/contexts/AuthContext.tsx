@@ -10,6 +10,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
+import { trackActivity } from "@/lib/activityTracker";
 
 export interface User {
   id: string;
@@ -75,7 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      trackActivity({
+        userId: cred.user.uid,
+        user: cred.user.displayName || cred.user.email || "User",
+        action: "Login",
+        target: cred.user.email || "Email login",
+        page: window.location.pathname,
+      });
       return true;
     } catch {
       return false;
@@ -91,6 +99,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         phone,
         createdAt: new Date().toISOString(),
+      });
+      trackActivity({
+        userId: cred.user.uid,
+        user: name || email,
+        action: "Signed Up",
+        target: email,
+        page: window.location.pathname,
+        extra: phone || "",
       });
       return true;
     } catch {
