@@ -248,7 +248,7 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
     const startDate = new Date().toISOString().split("T")[0];
     const endDate = new Date(Date.now() + days * 86_400_000).toISOString().split("T")[0];
 
-    await usersService.upsert(user.uid, {
+    await usersService.upsert(user.id, {
       subscription: {
         plan: fullPlanName,
         startDate,
@@ -264,11 +264,11 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
     await transactionsService.create({
       type: "income",
       amount: price,
-      description: `${fullPlanName} - ${user.email || user.displayName || phone}`,
+      description: `${fullPlanName} - ${user.email || user.name || phone}`,
       method: "Mobile Money",
       status: "completed",
       date: startDate,
-      userId: user.uid,
+      userId: user.id,
       msisdn: paymentMeta.msisdn || phone,
       providerTxId: paymentMeta.providerTxId || "",
       customerRef: paymentMeta.customerRef || "",
@@ -278,8 +278,8 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
     } as any);
 
     await trackActivity({
-      userId: user.uid,
-      user: user.displayName || user.email || "User",
+      userId: user.id,
+      user: user.name || user.email || "User",
       action: "Subscribed",
       target: fullPlanName,
       page: window.location.pathname,
