@@ -1,13 +1,5 @@
-import { defineConfig, Plugin } from "vite";
-import react from "@vitejs/plugin-react";
-import path from "path";
-import fs from "fs";
-
-function generateServiceWorker(): Plugin {
-  const writeSW = () => {
-    const timestamp = Date.now();
-    const sw = `// LUO FILM Service Worker — build ${timestamp}
-const CACHE_VERSION = 'luofilm-${timestamp}';
+// LUO FILM Service Worker — build 1773780287853
+const CACHE_VERSION = 'luofilm-1773780287853';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -62,36 +54,4 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(fetch(event.request));
-});
-`;
-    fs.writeFileSync(path.resolve(__dirname, "public/sw.js"), sw, "utf-8");
-  };
-
-  return {
-    name: "generate-service-worker",
-    buildStart() { writeSW(); },
-    configureServer(server) {
-      writeSW();
-      server.watcher.on("change", (file) => {
-        if (file.includes("vite.config")) writeSW();
-      });
-    },
-  };
-}
-
-export default defineConfig({
-  server: {
-    host: "0.0.0.0",
-    port: 5000,
-    allowedHosts: true,
-    hmr: {
-      overlay: false,
-    },
-  },
-  plugins: [react(), generateServiceWorker()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
 });
