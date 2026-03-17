@@ -286,6 +286,11 @@ async function update(collectionName: string, id: string, data: Record<string, a
   await updateDoc(doc(db, collectionName, id), stripUndefined(rest));
 }
 
+async function upsert(collectionName: string, id: string, data: Record<string, any>): Promise<void> {
+  const { id: _id, ...rest } = data as any;
+  await setDoc(doc(db, collectionName, id), stripUndefined(rest), { merge: true });
+}
+
 async function remove(collectionName: string, id: string): Promise<void> {
   await deleteDoc(doc(db, collectionName, id));
 }
@@ -454,6 +459,7 @@ export const usersService = {
   getAll: () => getAll<any>("users"),
   getById: (id: string) => getById<any>("users", id),
   update: (id: string, data: any) => update("users", id, data),
+  upsert: (id: string, data: any) => upsert("users", id, data),
   delete: (id: string) => remove("users", id),
   subscribe: (cb: (items: any[]) => void) => subscribe<any>("users", cb),
 };

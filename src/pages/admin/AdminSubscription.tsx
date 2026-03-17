@@ -63,8 +63,8 @@ export default function AdminSubscription() {
       const days = planDurations[planName] || 30;
       const startDate = new Date().toISOString().split("T")[0];
       const endDate = new Date(Date.now() + days * 86400000).toISOString().split("T")[0];
-      await usersService.update(upgradeTarget.id, {
-        subscription: { plan: planName, startDate, endDate, status: "active" },
+      await usersService.upsert(upgradeTarget.id, {
+        subscription: { plan: planName, startDate, endDate, status: "active", activatedAt: new Date().toISOString() },
       });
       toast({ title: `Subscription updated to ${planName}` });
       setUpgradeTarget(null);

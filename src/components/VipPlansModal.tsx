@@ -248,7 +248,7 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
     const startDate = new Date().toISOString().split("T")[0];
     const endDate = new Date(Date.now() + days * 86_400_000).toISOString().split("T")[0];
 
-    await usersService.update(user.uid, {
+    await usersService.upsert(user.uid, {
       subscription: {
         plan: fullPlanName,
         startDate,
@@ -405,9 +405,10 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
             onOpenChange(false);
           }, 3500);
         } catch (err: any) {
+          console.error("grantSubscription failed:", err?.code, err?.message, err);
           setStep("error");
           setErrorMsg(
-            `Payment received but subscription activation failed. Contact support with ref: ${internalRef}`
+            `Payment received but subscription activation failed (${err?.code || err?.message || "unknown error"}). Contact support with ref: ${internalRef}`
           );
         }
       } else if (isPaymentFailed(payload)) {
