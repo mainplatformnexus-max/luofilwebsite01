@@ -258,6 +258,8 @@ const VipPlansModal = ({ open, onOpenChange }: VipPlansModalProps) => {
         provider: paymentMeta.provider || "Mobile Money",
         providerTxId: paymentMeta.providerTxId || "",
         internalRef: paymentMeta.internalRef || "",
+        downloadsUsed: 0,
+        deviceIds: [],
       },
     });
 

@@ -9,6 +9,7 @@ import ContentRow from "@/components/ContentRow";
 import VipPlansModal from "@/components/VipPlansModal";
 import DownloadModal from "@/components/DownloadModal";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { filterLinksByQuality } from "@/lib/planLimits";
 
 const Detail = () => {
   const { slug } = useParams();
@@ -16,8 +17,8 @@ const Detail = () => {
   const { user, isAdmin } = useAuth();
   const { movies } = useMovies();
   const { series } = useSeries();
-  const { subscription, hasActive } = useSubscription(user?.id);
-  const canAccess = isAdmin || hasActive;
+  const { subscription, hasActive, deviceAllowed, incrementDownload } = useSubscription(user?.id);
+  const canAccess = isAdmin || (hasActive && deviceAllowed);
 
   const [vipOpen, setVipOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
@@ -35,7 +36,9 @@ const Detail = () => {
   const genres = movie?.genre || show?.genre || [];
   const description = movie?.description || show?.description || "";
   const poster = movie?.poster || show?.poster || "";
-  const streamLinks = movie?.streamLinks || show?.streamLinks || [];
+  const rawStreamLinks = movie?.streamLinks || show?.streamLinks || [];
+  const planMaxQuality = subscription?.limits?.maxQuality ?? "720p";
+  const streamLinks = rawStreamLinks;
 
   usePageMeta({
     title: content ? `${title} - Free download luofilm.site vj paul real` : "LUO FILM",
@@ -197,6 +200,7 @@ const Detail = () => {
         streamLinks={streamLinks}
         subscription={subscription}
         onUpgrade={() => { setDownloadOpen(false); setVipOpen(true); }}
+        onDownloaded={incrementDownload}
         isAdmin={isAdmin}
       />
     </div>

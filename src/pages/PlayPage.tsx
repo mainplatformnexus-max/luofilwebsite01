@@ -13,21 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { trackActivity } from "@/lib/activityTracker";
 
-function filterLinksByTier(
-  links: { quality: string; url: string; fileSize?: string }[],
-  tier: number
-): { quality: string; url: string; fileSize?: string }[] {
-  if (tier >= 3) return links;
-  if (tier >= 2) return links.filter((l) => {
-    const q = l.quality.toUpperCase();
-    return !q.includes("4K") && !q.includes("UHD") && !q.includes("2K");
-  });
-  if (tier >= 1) return links.filter((l) => {
-    const q = l.quality.toUpperCase();
-    return !q.includes("4K") && !q.includes("UHD") && !q.includes("2K") && !q.includes("1080");
-  });
-  return [];
-}
+import { filterLinksByQuality } from "@/lib/planLimits";
 
 const isM3U8 = (url: string) => url.includes(".m3u8");
 const isDirectVideo = (url: string) => /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
@@ -144,7 +130,7 @@ const PlayPage = () => {
   const { series } = useSeries();
   const { channels } = useLiveChannels();
   const { sports } = useSportContent();
-  const { subscription, hasActive } = useSubscription(user?.id);
+  const { subscription, hasActive, deviceAllowed, incrementDownload } = useSubscription(user?.id);
 
   // Resolve series BEFORE the episode hook (hook must know the series identity)
   const show = series.find((s) => s.slug === slug);
@@ -156,8 +142,8 @@ const PlayPage = () => {
     show?.slug || ""
   );
 
-  const canAccess = isAdmin || hasActive;
-  const planTier = isAdmin ? 4 : (subscription?.tier ?? 0);
+  const canAccess = isAdmin || (hasActive && deviceAllowed);
+  const planMaxQuality = subscription?.limits?.maxQuality ?? "720p";
   const [vipOpen, setVipOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -265,19 +251,21 @@ const PlayPage = () => {
     (sport?.streamUrl || null) ||
     "";
 
-  // Download quality links filtered by plan tier
+  // Download quality links filtered by plan quality
   const rawDownloadLinks: { quality: string; url: string; fileSize?: string }[] =
     isSeries && currentEpisode
       ? epStreamLinks(currentEpisode)
       : (movie?.streamLinks || []);
-  const downloadQualityLinks = canAccess ? filterLinksByTier(rawDownloadLinks, planTier) : [];
+  const downloadQualityLinks = canAccess && isAdmin
+    ? rawDownloadLinks
+    : canAccess ? filterLinksByQuality(rawDownloadLinks, planMaxQuality) : [];
 
-  // Download links for the download modal (also filtered by tier)
+  // Download links for the download modal (all links shown, locked ones display lock icon)
   const rawModalLinks: { quality: string; url: string; fileSize?: string }[] =
     isSeries && currentEpisode
       ? epDownloadLinks(currentEpisode)
       : (movie?.streamLinks || []);
-  const downloadLinks = filterLinksByTier(rawModalLinks, planTier);
+  const downloadLinks = rawModalLinks;
 
   const actors = movie?.actors || show?.actors || [];
 
@@ -302,7 +290,28 @@ const PlayPage = () => {
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {/* Video Player */}
             <div className="w-full bg-black" style={{ aspectRatio: "16/9", maxHeight: "480px" }}>
-              {!canAccess ? (
+              {hasActive && !deviceAllowed ? (
+                <div className="relative w-full h-full">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 md:gap-4 z-20 bg-black">
+                    {poster && <img src={poster} alt={title} className="absolute inset-0 w-full h-full object-cover opacity-20" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                    <div className="relative z-10 flex flex-col items-center gap-2 md:gap-4 text-center px-4 md:px-6">
+                      <div className="w-9 h-9 md:w-16 md:h-16 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/40">
+                        <Lock className="w-4 h-4 md:w-8 md:h-8 text-red-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-xs md:text-lg">Device Limit Reached</p>
+                        <p className="text-white/50 text-[10px] md:text-sm mt-0.5 md:mt-1">
+                          Your <span className="text-amber-400">{subscription?.plan}</span> plan only allows {subscription?.limits?.deviceLimit} device{(subscription?.limits?.deviceLimit ?? 1) > 1 ? "s" : ""}. Log out on another device or upgrade your plan.
+                        </p>
+                      </div>
+                      <button onClick={() => setVipOpen(true)} className="px-4 py-1.5 md:px-8 md:py-3 bg-amber-500 text-black font-bold rounded-lg md:rounded-xl hover:bg-amber-400 text-[10px] md:text-sm">
+                        Upgrade Plan
+                      </button>
+                      <button onClick={() => navigate(-1)} className="text-white/40 text-[10px] md:text-xs hover:text-white/70">← Go Back</button>
+                    </div>
+                  </div>
+                </div>
+              ) : !canAccess ? (
                 <div className="relative w-full h-full">
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 md:gap-4 z-20 bg-black">
                     {poster && (
@@ -950,6 +959,7 @@ const PlayPage = () => {
       streamLinks={downloadLinks}
       subscription={subscription}
       onUpgrade={() => { setDownloadOpen(false); setVipOpen(true); }}
+      onDownloaded={incrementDownload}
       isAdmin={isAdmin}
     />
     </>

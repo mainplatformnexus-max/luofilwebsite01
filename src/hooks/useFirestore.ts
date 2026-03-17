@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { useState, useEffect, useRef } from "react";
+import { doc, onSnapshot, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
   moviesService, seriesService, carouselsService, celebritiesService, usersService, adsService,
@@ -9,13 +9,17 @@ import {
   FirestoreLiveChannel, FirestoreSportContent, FirestoreTransaction, FirestoreActivity,
   FirestoreEpisode, FirestoreComment
 } from "@/lib/firestore";
+import { getPlanLimits, getOrCreateDeviceId, PlanLimits } from "@/lib/planLimits";
 
 export interface UserSubscription {
   plan: string;
   startDate: string;
   endDate: string;
   status: "active" | "expired";
-  tier: number; // 0=none,1=standard,2=pro/premium,3=ultra,4=vip
+  tier: number;
+  downloadsUsed: number;
+  deviceIds: string[];
+  limits: PlanLimits;
 }
 
 function getPlanTier(plan: string): number {
@@ -29,31 +33,77 @@ function getPlanTier(plan: string): number {
 
 export function useSubscription(userId?: string) {
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
+  const [deviceAllowed, setDeviceAllowed] = useState(true);
   const [loading, setLoading] = useState(true);
+  const registeredRef = useRef(false);
 
   useEffect(() => {
+    registeredRef.current = false;
     if (!userId) { setSubscription(null); setLoading(false); return; }
+
     const ref = doc(db, "users", userId);
-    const unsub = onSnapshot(ref, (snap) => {
+    const unsub = onSnapshot(ref, async (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         const sub = data.subscription;
         if (sub && sub.endDate) {
           const isActive = new Date(sub.endDate) > new Date();
           const tier = getPlanTier(sub.plan || "");
-          setSubscription({ plan: sub.plan || "", startDate: sub.startDate || "", endDate: sub.endDate, status: isActive ? "active" : "expired", tier });
+          const limits = getPlanLimits(sub.plan || "");
+          const downloadsUsed: number = sub.downloadsUsed ?? 0;
+          const deviceIds: string[] = sub.deviceIds ?? [];
+
+          setSubscription({
+            plan: sub.plan || "",
+            startDate: sub.startDate || "",
+            endDate: sub.endDate,
+            status: isActive ? "active" : "expired",
+            tier,
+            downloadsUsed,
+            deviceIds,
+            limits,
+          });
+
+          if (isActive && !registeredRef.current) {
+            registeredRef.current = true;
+            const deviceId = getOrCreateDeviceId();
+            if (deviceIds.includes(deviceId)) {
+              setDeviceAllowed(true);
+            } else if (limits.deviceLimit === -1 || deviceIds.length < limits.deviceLimit) {
+              setDeviceAllowed(true);
+              try {
+                await updateDoc(ref, { "subscription.deviceIds": arrayUnion(deviceId) });
+              } catch { /* ignore */ }
+            } else {
+              setDeviceAllowed(false);
+            }
+          } else if (!isActive) {
+            setDeviceAllowed(true);
+          }
         } else {
           setSubscription(null);
+          setDeviceAllowed(true);
         }
       } else {
         setSubscription(null);
+        setDeviceAllowed(true);
       }
       setLoading(false);
     });
     return unsub;
   }, [userId]);
 
-  return { subscription, loading, hasActive: !!subscription && subscription.status === "active" };
+  const incrementDownload = async () => {
+    if (!userId) return;
+    const ref = doc(db, "users", userId);
+    try {
+      const current = subscription?.downloadsUsed ?? 0;
+      await updateDoc(ref, { "subscription.downloadsUsed": current + 1 });
+    } catch { /* ignore */ }
+  };
+
+  const hasActive = !!subscription && subscription.status === "active";
+  return { subscription, loading, hasActive, deviceAllowed, incrementDownload };
 }
 
 export function useTransactions() {
