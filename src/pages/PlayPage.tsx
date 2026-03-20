@@ -241,9 +241,13 @@ const PlayPage = () => {
     });
   }, [currentEpisode?.id, content?.slug]);
 
-  // Primary URL for the video player (embed URL takes priority for movies)
+  // Primary URL for the video player
+  // For episodes: always use streamLink (the embed/player URL saved from embed code) first
+  // For movies: use embedUrl first, then streamLinks
   const primaryUrl: string =
-    (isSeries && currentEpisode ? epStreamLinks(currentEpisode)[0]?.url : null) ||
+    (isSeries && currentEpisode
+      ? (currentEpisode.streamLink?.trim() || epStreamLinks(currentEpisode)[0]?.url || null)
+      : null) ||
     (movie?.embedUrl && movie.embedUrl.trim() ? movie.embedUrl : null) ||
     (movie?.streamLinks?.[0]?.url || null) ||
     (show?.streamLinks?.[0]?.url || null) ||
@@ -252,9 +256,10 @@ const PlayPage = () => {
     "";
 
   // Download quality links filtered by plan quality
+  // For episodes: use streamLinks only (NOT streamLink which is the embed URL)
   const rawDownloadLinks: { quality: string; url: string; fileSize?: string }[] =
     isSeries && currentEpisode
-      ? epStreamLinks(currentEpisode)
+      ? (currentEpisode.streamLinks || [])
       : (movie?.streamLinks || []);
   const downloadQualityLinks = canAccess && isAdmin
     ? rawDownloadLinks
