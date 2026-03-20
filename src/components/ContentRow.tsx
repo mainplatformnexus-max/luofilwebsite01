@@ -30,16 +30,12 @@ const ShowCard = ({ show }: { show: Show }) => {
 
   return (
     <div className="flex-shrink-0 w-[120px] md:w-[170px] cursor-pointer group" onClick={handleClick}>
-      <div
-        className="w-full aspect-[3/4] rounded-lg mb-1 relative overflow-hidden bg-muted"
-        style={{ background: show.gradient || "hsl(var(--muted))" }}
-      >
+      <div className="w-full aspect-[3/4] rounded-lg mb-1 relative overflow-hidden bg-black/20">
         {show.poster && (
           <img
             src={show.poster}
             alt={show.title}
             className="w-full h-full object-cover"
-            loading="lazy"
             referrerPolicy="no-referrer"
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />

@@ -1,5 +1,5 @@
-// LUO FILM Service Worker — build 1773780287853
-const CACHE_VERSION = 'luofilm-1773780287853';
+// LUO FILM Service Worker — build 1774025781724
+const CACHE_VERSION = 'luofilm-1774025781724';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

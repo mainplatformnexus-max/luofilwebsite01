@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ActivityTracker from "@/components/ActivityTracker";
+import PhoneGateModal from "@/components/PhoneGateModal";
 import Index from "./pages/Index.tsx";
 import Detail from "./pages/Detail.tsx";
 import PlayPage from "./pages/PlayPage.tsx";
@@ -46,6 +47,7 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <ActivityTracker />
+          <PhoneGateModal />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/drama" element={<DramaPage />} />

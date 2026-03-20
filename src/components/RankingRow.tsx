@@ -46,16 +46,12 @@ const RankingRow = ({ title, shows }: RankingRowProps) => {
 
             return (
               <div key={show.rank} className="flex-shrink-0 w-[120px] md:w-[170px] cursor-pointer group" onClick={handleClick}>
-                <div
-                  className="w-full aspect-[3/4] rounded-lg mb-2 relative overflow-hidden"
-                  style={{ background: show.gradient }}
-                >
+                <div className="w-full aspect-[3/4] rounded-lg mb-2 relative overflow-hidden bg-black/20">
                   {show.poster && (
                     <img
                       src={show.poster}
                       alt={show.title}
                       className="absolute inset-0 w-full h-full object-cover"
-                      loading="lazy"
                       referrerPolicy="no-referrer"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />

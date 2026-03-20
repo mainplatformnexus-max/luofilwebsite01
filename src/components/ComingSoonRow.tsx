@@ -29,10 +29,7 @@ const ComingSoonRow = ({ shows }: ComingSoonRowProps) => {
         <div ref={scrollRef} className="flex gap-2 md:gap-3 px-1 md:px-4 overflow-x-auto scrollbar-hidden pb-2">
           {shows.map((show, i) => (
             <div key={i} className="flex-shrink-0 w-[120px] md:w-[170px] cursor-pointer group">
-              <div
-                className="w-full aspect-[3/4] rounded-lg mb-2 relative overflow-hidden"
-                style={{ background: show.gradient }}
-              >
+              <div className="w-full aspect-[3/4] rounded-lg mb-2 relative overflow-hidden bg-black/20">
                 <div
                   className="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-8"
                   style={{ background: "linear-gradient(0deg, rgba(10,12,15,0.8) 0%, transparent 100%)" }}

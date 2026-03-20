@@ -25,6 +25,13 @@ const revenueData = [
   { month: "Nov", revenue: 10200000 }, { month: "Dec", revenue: 11500000 },
 ];
 
+function isActiveSub(sub: any): boolean {
+  if (!sub) return false;
+  if (typeof sub === "string") return true;
+  if (!sub.endDate) return !!sub.plan;
+  return new Date(sub.endDate) > new Date();
+}
+
 export default function AdminOverview() {
   const { movies } = useMovies();
   const { series } = useSeries();
@@ -32,7 +39,7 @@ export default function AdminOverview() {
   const { channels } = useLiveChannels();
   const { sports } = useSportContent();
 
-  const activeSubscribers = users.filter((u) => u.subscription);
+  const activeSubscribers = users.filter((u) => isActiveSub(u.subscription));
 
   const subsByPlan = useMemo(() => {
     const counts: Record<string, number> = {};
