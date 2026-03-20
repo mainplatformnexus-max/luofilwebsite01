@@ -15,39 +15,39 @@ const PromoBanner = ({
 }: PromoBannerProps) => {
   const hasText = title || subtitle || ctaText;
 
+  const handleClick = () => {
+    if (ctaLink) window.location.href = ctaLink;
+  };
+
   return (
-    <div
-      className="w-full my-3 md:my-5 px-2 md:px-4 cursor-pointer"
-      onClick={() => ctaLink && (window.location.href = ctaLink)}
-    >
-      <div className="w-full rounded-xl overflow-hidden relative bg-black">
+    <div className="w-full my-3 md:my-5 px-2 md:px-4 cursor-pointer" onClick={handleClick}>
+      <div className="w-full rounded-xl overflow-hidden bg-black">
         {imageUrl ? (
           <>
             <img
               src={imageUrl}
               alt={title || "Advertisement"}
               className="w-full block"
-              style={{ display: "block", maxHeight: "none" }}
               referrerPolicy="no-referrer"
             />
             {hasText && (
               <div
-                className="absolute inset-x-0 bottom-0 px-4 py-4 flex items-end justify-between gap-3"
-                style={{ background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.45) 60%, transparent 100%)" }}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 md:px-4 md:py-2.5"
+                style={{ background: "#111116" }}
               >
                 <div className="flex-1 min-w-0">
                   {title && (
-                    <p className="text-white font-extrabold text-sm md:text-lg leading-tight drop-shadow-lg">{title}</p>
+                    <p className="text-white font-bold text-[11px] md:text-sm leading-tight truncate">{title}</p>
                   )}
                   {subtitle && (
-                    <p className="text-white/80 font-semibold text-xs md:text-sm mt-0.5 drop-shadow">{subtitle}</p>
+                    <p className="text-white/55 font-medium text-[10px] md:text-xs mt-0.5 truncate">{subtitle}</p>
                   )}
                 </div>
                 {ctaText && (
                   <a
                     href={ctaLink || "#"}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-shrink-0 px-4 py-2 rounded-lg font-extrabold text-xs md:text-sm text-black shadow-lg"
+                    className="flex-shrink-0 px-3 py-1 md:px-4 md:py-1.5 rounded-lg font-bold text-[10px] md:text-xs text-black"
                     style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)", whiteSpace: "nowrap" }}
                   >
                     {ctaText}
@@ -58,18 +58,18 @@ const PromoBanner = ({
           </>
         ) : (
           <div
-            className="w-full flex items-center justify-between px-5 py-6 gap-4"
+            className="w-full flex items-center justify-between px-4 py-5 gap-3"
             style={{ background: "linear-gradient(135deg, #1a1c22 0%, #23252b 50%, #1a1c22 100%)" }}
           >
             <div className="flex-1 min-w-0">
-              {title && <p className="text-white font-extrabold text-sm md:text-base">{title}</p>}
-              {subtitle && <p className="text-white/60 text-xs md:text-sm mt-0.5">{subtitle}</p>}
+              {title && <p className="text-white font-bold text-xs md:text-sm">{title}</p>}
+              {subtitle && <p className="text-white/55 text-[10px] md:text-xs mt-0.5">{subtitle}</p>}
             </div>
             {ctaText && (
               <a
                 href={ctaLink || "#"}
                 onClick={(e) => e.stopPropagation()}
-                className="flex-shrink-0 px-4 py-2 rounded-lg font-extrabold text-xs md:text-sm text-black"
+                className="flex-shrink-0 px-3 py-1.5 rounded-lg font-bold text-[10px] md:text-xs text-black"
                 style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)", whiteSpace: "nowrap" }}
               >
                 {ctaText}
