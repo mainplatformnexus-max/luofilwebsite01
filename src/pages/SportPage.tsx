@@ -1,9 +1,10 @@
 import Navbar from "@/components/Navbar";
 import MobileNav from "@/components/MobileNav";
 import { Trophy, Signal, Play, Lock, Crown } from "lucide-react";
-import { useSportContent, useSubscription } from "@/hooks/useFirestore";
+import { useSportContent, useSubscription, useAds } from "@/hooks/useFirestore";
 import { useAuth } from "@/contexts/AuthContext";
 import VipPlansModal from "@/components/VipPlansModal";
+import PromoBanner from "@/components/PromoBanner";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -19,6 +20,7 @@ const SportPage = () => {
 
   const canAccessSports = isAdmin || (hasActive && (subscription?.limits?.sports ?? false));
   const hasAnySubscription = hasActive;
+  const { ads } = useAds("Sport");
 
   const filtered = filterCat === "All" ? sports : sports.filter((s) => s.category === filterCat);
 
@@ -66,6 +68,8 @@ const SportPage = () => {
             </button>
           </div>
         )}
+
+        {ads[0] && <PromoBanner {...ads[0]} />}
 
         <div className="flex gap-1.5 md:gap-2 mb-3 md:mb-6 overflow-x-auto scrollbar-hidden pb-1">
           {categories.map((cat) => (

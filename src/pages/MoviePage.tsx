@@ -1,7 +1,8 @@
 import Navbar from "@/components/Navbar";
 import ContentRow from "@/components/ContentRow";
 import MobileNav from "@/components/MobileNav";
-import { useMovies } from "@/hooks/useFirestore";
+import PromoBanner from "@/components/PromoBanner";
+import { useMovies, useAds } from "@/hooks/useFirestore";
 import { ContentPageSkeleton } from "@/components/PageSkeleton";
 
 const toCard = (m: any) => ({
@@ -17,6 +18,7 @@ const hasGenre = (m: any, genre: string) =>
 
 const MoviePage = () => {
   const { movies, loading } = useMovies();
+  const { ads } = useAds("Movie");
 
   const all = movies.map(toCard);
   const popular = movies.filter((m) => m.isPopular || m.isHotDrama).map(toCard);
@@ -32,7 +34,6 @@ const MoviePage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       <div style={{ marginTop: "48px" }} className="pt-6 pb-16">
         {loading ? (
           <ContentPageSkeleton />
@@ -41,9 +42,11 @@ const MoviePage = () => {
         ) : (
           <>
             <ContentRow title="Popular on LUO FILM" shows={all.slice(0, 8)} />
+            {ads[0] && <PromoBanner {...ads[0]} />}
             {popular.length > 0 && <ContentRow title="Hot Movies" shows={popular} />}
             {topRated.length > 0 && <ContentRow title="Top Rated" shows={topRated} />}
             {latest.length > 0 && <ContentRow title="Latest Release" shows={latest} />}
+            {ads[1] && <PromoBanner {...ads[1]} />}
             {action.length > 0 && <ContentRow title="Action & Adventure" shows={action} />}
             {romance.length > 0 && <ContentRow title="Romance" shows={romance} />}
             {sweetRomance.length > 0 && <ContentRow title="Sweet Romance" shows={sweetRomance} />}

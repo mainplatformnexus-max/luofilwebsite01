@@ -1,7 +1,8 @@
 import Navbar from "@/components/Navbar";
 import ContentRow from "@/components/ContentRow";
 import MobileNav from "@/components/MobileNav";
-import { useSeries } from "@/hooks/useFirestore";
+import PromoBanner from "@/components/PromoBanner";
+import { useSeries, useAds } from "@/hooks/useFirestore";
 import { ContentPageSkeleton } from "@/components/PageSkeleton";
 
 const toCard = (s: any) => ({
@@ -21,6 +22,7 @@ const isNotAnimeOrVariety = (s: any) =>
 
 const DramaPage = () => {
   const { series, loading } = useSeries();
+  const { ads } = useAds("Drama");
 
   const dramas = series.filter(isNotAnimeOrVariety);
   const all = dramas.map(toCard);
@@ -37,7 +39,6 @@ const DramaPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       <div style={{ marginTop: "48px" }} className="pt-6 pb-16">
         {loading ? (
           <ContentPageSkeleton />
@@ -46,9 +47,11 @@ const DramaPage = () => {
         ) : (
           <>
             <ContentRow title="Popular on LUO FILM" shows={showAll.slice(0, 8)} />
+            {ads[0] && <PromoBanner {...ads[0]} />}
             {popular.length > 0 && <ContentRow title="Hot Dramas" shows={popular} />}
             {romance.length > 0 && <ContentRow title="Romance & Love" shows={romance} />}
             {sweetRomance.length > 0 && <ContentRow title="Sweet Romance" shows={sweetRomance} />}
+            {ads[1] && <PromoBanner {...ads[1]} />}
             {action.length > 0 && <ContentRow title="Action & Historical" shows={action} />}
             {ancientCostume.length > 0 && <ContentRow title="Ancient Costume" shows={ancientCostume} />}
             {highQuality.length > 0 && <ContentRow title="High Quality" shows={highQuality} />}

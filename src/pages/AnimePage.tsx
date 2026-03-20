@@ -1,7 +1,8 @@
 import Navbar from "@/components/Navbar";
 import ContentRow from "@/components/ContentRow";
 import MobileNav from "@/components/MobileNav";
-import { useSeries, useMovies } from "@/hooks/useFirestore";
+import PromoBanner from "@/components/PromoBanner";
+import { useSeries, useMovies, useAds } from "@/hooks/useFirestore";
 import { ContentPageSkeleton } from "@/components/PageSkeleton";
 
 const ANIME_GENRES = ["Animation", "Anime", "Fantasy"];
@@ -20,6 +21,7 @@ const toCard = (item: any, useEpisodes = true) => ({
 const AnimePage = () => {
   const { series, loading: sLoading } = useSeries();
   const { movies, loading: mLoading } = useMovies();
+  const { ads } = useAds("Anime");
 
   const animeFromSeries = series.filter(isAnime).map((s) => toCard(s, true));
   const animeFromMovies = movies.filter(isAnime).map((m) => toCard(m, false));
@@ -29,7 +31,6 @@ const AnimePage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       <div style={{ marginTop: "48px" }} className="pt-6 pb-16">
         {loading ? (
           <ContentPageSkeleton />
@@ -38,8 +39,10 @@ const AnimePage = () => {
         ) : (
           <>
             <ContentRow title="Popular Anime" shows={allAnime.slice(0, 8)} />
+            {ads[0] && <PromoBanner {...ads[0]} />}
             {animeFromSeries.length > 0 && <ContentRow title="Anime Series" shows={animeFromSeries} />}
             {animeFromMovies.length > 0 && <ContentRow title="Anime Movies" shows={animeFromMovies} />}
+            {ads[1] && <PromoBanner {...ads[1]} />}
             <ContentRow title="All Anime" shows={allAnime} />
           </>
         )}

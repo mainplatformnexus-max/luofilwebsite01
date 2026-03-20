@@ -1,9 +1,10 @@
 import Navbar from "@/components/Navbar";
 import MobileNav from "@/components/MobileNav";
 import { Tv, Signal, Radio, Lock, Crown } from "lucide-react";
-import { useLiveChannels, useSubscription } from "@/hooks/useFirestore";
+import { useLiveChannels, useSubscription, useAds } from "@/hooks/useFirestore";
 import { useAuth } from "@/contexts/AuthContext";
 import VipPlansModal from "@/components/VipPlansModal";
+import PromoBanner from "@/components/PromoBanner";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -19,6 +20,7 @@ const LiveTVPage = () => {
 
   const canAccessLiveTV = isAdmin || (hasActive && (subscription?.limits?.liveTv ?? false));
   const hasAnySubscription = hasActive;
+  const { ads } = useAds("Live TV");
 
   const filtered = filterCat === "All" ? channels : channels.filter((c) => c.category === filterCat);
 
@@ -66,6 +68,8 @@ const LiveTVPage = () => {
             </button>
           </div>
         )}
+
+        {ads[0] && <PromoBanner {...ads[0]} />}
 
         <div className="flex gap-1.5 md:gap-2 mb-3 md:mb-6 overflow-x-auto scrollbar-hidden pb-1">
           {categories.map((cat) => (

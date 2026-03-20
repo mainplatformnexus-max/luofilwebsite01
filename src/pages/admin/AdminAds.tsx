@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { adsService, FirestoreAd } from "@/lib/firestore";
 import { useAds } from "@/hooks/useFirestore";
 import { toast } from "@/hooks/use-toast";
+import PromoBanner from "@/components/PromoBanner";
 
 export default function AdminAds() {
   const { ads, loading } = useAds();
@@ -100,7 +101,7 @@ export default function AdminAds() {
             <div key={ad.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4">
               <div className="w-32 h-16 bg-white/5 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 border border-white/10">
                 {ad.imageUrl ? (
-                  <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                 ) : (
                   <div className="flex items-center gap-2 text-white/20">
                     <ImageIcon className="w-5 h-5" />
@@ -189,6 +190,7 @@ export default function AdminAds() {
                 <option value="Drama">Drama</option>
                 <option value="Movie">Movie</option>
                 <option value="Anime">Anime</option>
+                <option value="Variety Show">Variety Show</option>
                 <option value="Live TV">Live TV</option>
                 <option value="Sport">Sport</option>
                 <option value="All Pages">All Pages</option>
@@ -202,17 +204,25 @@ export default function AdminAds() {
                 placeholder="https://example.com/banner.jpg"
                 className="bg-white/5 border-white/10 text-white placeholder:text-white/30"
               />
-              {form.imageUrl && (
-                <div className="mt-2 rounded-lg overflow-hidden border border-white/10">
-                  <img src={form.imageUrl} alt="preview" className="w-full h-28 object-cover" referrerPolicy="no-referrer" />
-                </div>
-              )}
-              {!form.imageUrl && (
-                <div className="mt-2 border border-dashed border-white/20 rounded-xl p-4 text-center">
-                  <ImageIcon className="w-6 h-6 mx-auto text-white/20 mb-1" />
-                  <p className="text-xs text-white/30">Paste an image URL above to preview the banner</p>
-                </div>
-              )}
+              <div className="mt-3">
+                <p className="text-xs text-white/40 mb-2 uppercase tracking-wider">Live Preview</p>
+                {form.imageUrl || form.title ? (
+                  <div className="rounded-xl overflow-hidden border border-white/10">
+                    <PromoBanner
+                      title={form.title || undefined}
+                      subtitle={form.subtitle || undefined}
+                      ctaText={form.ctaText || undefined}
+                      ctaLink={form.ctaLink || undefined}
+                      imageUrl={form.imageUrl || undefined}
+                    />
+                  </div>
+                ) : (
+                  <div className="border border-dashed border-white/20 rounded-xl p-4 text-center">
+                    <ImageIcon className="w-6 h-6 mx-auto text-white/20 mb-1" />
+                    <p className="text-xs text-white/30">Fill in the fields above to see a live preview</p>
+                  </div>
+                )}
+              </div>
             </div>
             <button
               onClick={handleSave}

@@ -1,7 +1,8 @@
 import Navbar from "@/components/Navbar";
 import ContentRow from "@/components/ContentRow";
 import MobileNav from "@/components/MobileNav";
-import { useSeries, useMovies } from "@/hooks/useFirestore";
+import PromoBanner from "@/components/PromoBanner";
+import { useSeries, useMovies, useAds } from "@/hooks/useFirestore";
 import { ContentPageSkeleton } from "@/components/PageSkeleton";
 
 const VARIETY_GENRES = ["Variety Show", "Reality", "Talk Show", "Game Show"];
@@ -20,6 +21,7 @@ const toCard = (item: any, useEpisodes = true) => ({
 const VarietyShowPage = () => {
   const { series, loading: sLoading } = useSeries();
   const { movies, loading: mLoading } = useMovies();
+  const { ads } = useAds("Variety Show");
 
   const varietyFromSeries = series.filter(isVariety).map((s) => toCard(s, true));
   const varietyFromMovies = movies.filter(isVariety).map((m) => toCard(m, false));
@@ -29,7 +31,6 @@ const VarietyShowPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       <div style={{ marginTop: "48px" }} className="pt-6 pb-16">
         {loading ? (
           <ContentPageSkeleton />
@@ -38,8 +39,10 @@ const VarietyShowPage = () => {
         ) : (
           <>
             <ContentRow title="Popular Variety Shows" shows={allVariety.slice(0, 8)} />
+            {ads[0] && <PromoBanner {...ads[0]} />}
             {varietyFromSeries.length > 0 && <ContentRow title="Variety Series" shows={varietyFromSeries} />}
             {varietyFromMovies.length > 0 && <ContentRow title="Variety Specials" shows={varietyFromMovies} />}
+            {ads[1] && <PromoBanner {...ads[1]} />}
             <ContentRow title="All Variety Shows" shows={allVariety} />
           </>
         )}
